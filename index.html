@@ -1,59 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Weather Forecast Portal - Kadavakolla Bindu</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weather Forecast App</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center font-sans">
+<body class="bg-gradient-to-tr from-blue-100 via-purple-100 to-pink-100 min-h-screen flex flex-col items-center justify-start p-6 space-y-8">
 
-  <main class="bg-white shadow-lg rounded-xl p-8 max-w-3xl w-full border border-gray-200">
-    
-    <!-- Header -->
-    <header class="text-center mb-8">
-      <h1 class="text-3xl md:text-4xl font-bold text-blue-700">Weather Forecast Portal</h1>
-      <p class="text-sm text-gray-600 mt-1">Developed by Kadavakolla Bindu</p>
-    </header>
+  <h1 class="text-4xl font-bold text-gray-800 mt-6 animate-pulse">Weather Forecast</h1>
 
-    <!-- City Input -->
-    <form onsubmit="getWeather(); return false;" class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
-      <input 
-        type="text" 
-        id="city" 
-        placeholder="Enter city name" 
-        class="w-full sm:w-2/3 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-        required
-      />
-      <button 
-        type="submit" 
-        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md shadow-sm transition">
-        Search
-      </button>
-    </form>
+  <!-- 🌤️ Search Box -->
+  <div class="bg-white shadow-lg rounded-xl p-6 w-full max-w-xl flex items-center space-x-4 transition-transform transform hover:scale-105">
+    <input id="city" type="text" placeholder="Enter a city" class="flex-1 p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition">
+    <button onclick="getWeather()" class="bg-indigo-500 text-white px-5 py-3 rounded-lg font-semibold hover:bg-indigo-600 transition">Search</button>
+  </div>
 
-    <!-- Current Weather Display -->
-    <section id="current-weather" class="text-center mb-8">
-      <img id="weather-icon" class="mx-auto w-16 h-16 hidden" alt="Weather Icon" />
-      <div id="temp-div" class="text-2xl font-semibold text-gray-800 mt-3"></div>
-      <div id="weather-info" class="text-gray-600 mt-1"></div>
-    </section>
+  <!-- 🌡️ Current Weather -->
+  <div class="bg-white shadow-2xl rounded-xl p-6 w-full max-w-xl text-center space-y-4 transition hover:scale-105">
+    <img id="weather-icon" class="hidden mx-auto w-16 h-16">
+    <div id="temp-div" class="text-3xl font-bold text-indigo-700"></div>
+    <div id="weather-info" class="text-gray-600 text-lg font-medium"></div>
+  </div>
 
-    <!-- Hourly Forecast -->
-    <section>
-      <h2 class="text-lg font-medium text-blue-600 mb-2">Hourly Forecast</h2>
-      <div id="hourly-forecast" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm text-gray-700"></div>
-    </section>
+  <!-- ⏰ Hourly Forecast -->
+  <h2 class="text-2xl font-semibold text-gray-700 mt-4">Hourly Forecast</h2>
+  <div id="hourly-forecast" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 w-full max-w-6xl transition-all"></div>
 
-    <!-- 5-Day Forecast -->
-    <section class="mt-6">
-      <h2 class="text-lg font-medium text-blue-600 mb-2">5-Day Forecast</h2>
-      <div id="five-day-forecast" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 text-sm text-gray-700"></div>
-    </section>
+  <!-- 📅 5-Day Forecast -->
+  <h2 class="text-2xl font-semibold text-gray-700 mt-6">5-Day Forecast</h2>
+  <div id="five-day-forecast" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 w-full max-w-6xl transition-all"></div>
 
-  </main>
+  <script>
+    const apiKey = "f8dc82ee22b1ccfea24de675f66e5b7a";
 
-  <!-- JavaScript -->
-  <script src="app.js"></script>
+    async function getWeather() {
+      const city = document.getElementById('city').value.trim();
+      if (!city) return alert("Please enter a city name.");
+
+      const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+      const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`;
+
+      try {
+        const currentRes = await fetch(currentWeatherUrl);
+        const currentData = await currentRes.json();
+
+        if (currentData.cod !== 200) return alert("City not found! Please check the name.");
+
+        const iconCode = currentData.weather[0].icon;
+        const temp = currentData.main.temp;
+        const desc = currentData.weather[0].description;
+
+        document.getElementById('weather-icon').src = `http://openweathermap.org/img/wn/${iconCode}.png`;
+        document.getElementById('weather-icon').classList.remove("hidden");
+        document.getElementById('temp-div').textContent = `${temp}°C`;
+        document.getElementById('weather-info').textContent = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+        // Hourly Forecast
+        const forecastRes = await fetch(forecastUrl);
+        const forecastData = await forecastRes.json();
+
+        const hourlyContainer = document.getElementById('hourly-forecast');
+        hourlyContainer.innerHTML = "";
+        for (let i = 0; i < 6; i++) {
+          const f = forecastData.list[i];
+          const time = new Date(f.dt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          hourlyContainer.innerHTML += `
+            <div class="bg-white p-4 rounded-xl shadow-md flex flex-col items-center space-y-2 hover:shadow-xl transition transform hover:-translate-y-1">
+              <img src="http://openweathermap.org/img/wn/${f.weather[0].icon}.png" class="w-10 h-10">
+              <div class="font-semibold text-indigo-600">${time}</div>
+              <div class="text-gray-700">${f.main.temp}°C</div>
+              <div class="text-sm text-gray-500">${f.weather[0].description}</div>
+            </div>
+          `;
+        }
+
+        // 5-Day Forecast
+        const dailyContainer = document.getElementById('five-day-forecast');
+        dailyContainer.innerHTML = "";
+        for (let i = 0; i < 5; i++) {
+          const f = forecastData.list[i * 8]; // approx every 24 hours
+          const date = new Date(f.dt * 1000).toLocaleDateString();
+          dailyContainer.innerHTML += `
+            <div class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-5 rounded-2xl shadow-md text-center hover:shadow-xl transition transform hover:-translate-y-1">
+              <div class="text-lg font-bold text-gray-700">${date}</div>
+              <img src="http://openweathermap.org/img/wn/${f.weather[0].icon}.png" class="w-14 h-14 mx-auto">
+              <div class="text-indigo-700 text-xl font-semibold">${f.main.temp_min}°C / ${f.main.temp_max}°C</div>
+              <div class="text-gray-600">${f.weather[0].description}</div>
+            </div>
+          `;
+        }
+
+      } catch (error) {
+        alert("Something went wrong. Please try again later.");
+      }
+    }
+
+    document.getElementById("city").addEventListener("keypress", function (e) {
+      if (e.key === "Enter") {
+        getWeather();
+      }
+    });
+  </script>
 </body>
 </html>
